@@ -1,0 +1,12 @@
+.DS_Store
+bin/
+build/
+release/
+gen/
+build.properties
+!build.properties.template
+local.properties
+ant.properties
+release-*/
+.settings/
+out/
