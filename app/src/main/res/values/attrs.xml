@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="aspect">
+        <enum name="square" value="0" />
+        <enum name="lock_width" value="1" />
+        <enum name="lock_height" value="2" />
+    </attr>
+
+    <declare-styleable name="LetterView">
+        <!-- Aspect to use when drawing LetterView. Choices are "square"(default), "lock_width"
+             or "lock_height" -->
+        <attr name="aspect" />
+        <!-- Color to use when drawing LockPatternView paths. -->
+        <attr name="pathColor" format="color|reference" />
+        <!-- The regular pattern color -->
+        <attr name="regularColor" format="color|reference" />
+        <!-- The error color -->
+        <attr name="errorColor" format="color|reference" />
+        <!-- The success color -->
+        <attr name="successColor" format="color|reference"/>
+    </declare-styleable>
+</resources>

@@ -9,6 +9,10 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.zappyware.learnletters.R;
+import com.zappyware.learnletters.entities.Point;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -67,6 +71,21 @@ public class DrawFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_draw, container, false);
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        ArrayList<Point> points = new ArrayList<>();
+        points.add(Point.of(.5f, .1f));
+        points.add(Point.of(.2f, .6f));
+        points.add(Point.of(.7f, .6f));
+        points.add(Point.of(.1f, .9f));
+        points.add(Point.of(.9f, .9f));
+
+        LetterView lv = (LetterView) view.findViewById(R.id.letter_view);
+        lv.setPattern(LetterView.DisplayMode.Correct, points);
     }
 
     // TODO: Rename method, update argument and hook method into UI event
