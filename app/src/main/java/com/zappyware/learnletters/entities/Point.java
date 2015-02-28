@@ -31,6 +31,24 @@ public class Point {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if(o instanceof Point) {
+            Point other = (Point) o;
+            return x == other.y && y == other.y;
+        } else {
+            return super.equals(o);
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 13;
+        hash += 7 * x + x;
+        hash += 7 * y + y;
+        return hash;
+    }
+
+    @Override
     public String toString() {
         return String.format(TS_PATTERN, x, y);
     }

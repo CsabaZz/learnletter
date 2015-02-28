@@ -29,6 +29,7 @@ import com.zappyware.learnletters.entities.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 
 public class LetterView extends View {
@@ -166,15 +167,15 @@ public class LetterView extends View {
     public void setPattern(DisplayMode displayMode, List<Point> points) {
         mPoints.clear();
         mPoints.addAll(points);
+
         clearPatternDrawLookup();
 
-        CellState state = null;
+        CellState state;
         for (Point point : points) {
             state = new CellState();
             state.size = mDotSize;
 
             mPointStates.put(point, state);
-            mPatternDrawLookup.put(point, Boolean.TRUE);
         }
 
         setDisplayMode(displayMode);
@@ -233,6 +234,9 @@ public class LetterView extends View {
 
     private void clearPatternDrawLookup() {
         mPatternDrawLookup.clear();
+        for(Point point : mPoints) {
+            mPatternDrawLookup.put(point, Boolean.FALSE);
+        }
     }
 
     public void disableInput() {
@@ -296,31 +300,6 @@ public class LetterView extends View {
     private Point detectAndAddHit(float x, float y) {
         final Point point = checkForNewHit(x, y);
         if (point != null) {
-            Point fillInGapCell = null;
-            final ArrayList<Point> pattern = mPoints;
-            if (!pattern.isEmpty()) {
-                final Point lastCell = pattern.get(pattern.size() - 1);
-                float dRow = point.x - lastCell.x;
-                float dColumn = point.y - lastCell.y;
-
-                float fillInRow = lastCell.x;
-                float fillInColumn = lastCell.y;
-
-                if (Math.abs(dRow) == 2 && Math.abs(dColumn) != 1) {
-                    fillInRow = lastCell.x + ((dRow > 0) ? 1 : -1);
-                }
-
-                if (Math.abs(dColumn) == 2 && Math.abs(dRow) != 1) {
-                    fillInColumn = lastCell.y + ((dColumn > 0) ? 1 : -1);
-                }
-
-                fillInGapCell = Point.of(fillInRow, fillInColumn);
-            }
-
-            if (fillInGapCell != null &&
-                    !mPatternDrawLookup.get(fillInGapCell)) {
-                addCellToPattern(fillInGapCell);
-            }
             addCellToPattern(point);
             if (mEnableHapticFeedback) {
                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY,
@@ -352,11 +331,14 @@ public class LetterView extends View {
                     }
                 });
         startLineEndAnimation(cellState, mInProgressX, mInProgressY,
-                getCenterXForColumn(point.y), getCenterYForRow(point.x));
+                getCenterXForColumn(point.x), getCenterYForRow(point.y));
     }
 
     private void startLineEndAnimation(final CellState state,
                                        final float startX, final float startY, final float targetX, final float targetY) {
+        state.lineStartX = startX;
+        state.lineStartY = startY;
+
         ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 1);
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
@@ -403,10 +385,10 @@ public class LetterView extends View {
     }
     
     private Point checkForNewHit(float x, float y) {
-        float hitSize = mDotSize / 2f;
+        float hitSize = mDotSize * 4f;
 
         Point point = null;
-        RectF r = null;
+        RectF r;
 
         float pixelX;
         float pixelY;
@@ -434,7 +416,7 @@ public class LetterView extends View {
             return null;
         }
 
-        if (mPatternDrawLookup.containsKey(point)) {
+        if (mPatternDrawLookup.get(point)) {
             return null;
         } else {
             return point;
@@ -523,8 +505,8 @@ public class LetterView extends View {
             if (mPatternInProgress && patternSize > 0) {
                 final ArrayList<Point> pattern = mPoints;
                 final Point lastCell = pattern.get(patternSize - 1);
-                float lastCellCenterX = getCenterXForColumn(lastCell.y);
-                float lastCellCenterY = getCenterYForRow(lastCell.x);
+                float lastCellCenterX = getCenterXForColumn(lastCell.x);
+                float lastCellCenterY = getCenterYForRow(lastCell.y);
 
                 
                 float left = Math.min(lastCellCenterX, x) - radius;
@@ -536,8 +518,8 @@ public class LetterView extends View {
                 if (hitCell != null) {
                     final float width = mSquareWidth * 0.5f;
                     final float height = mSquareHeight * 0.5f;
-                    final float hitCellCenterX = getCenterXForColumn(hitCell.y);
-                    final float hitCellCenterY = getCenterYForRow(hitCell.x);
+                    final float hitCellCenterX = getCenterXForColumn(hitCell.x);
+                    final float hitCellCenterY = getCenterYForRow(hitCell.y);
 
                     left = Math.min(hitCellCenterX - width, left);
                     right = Math.max(hitCellCenterX + width, right);
@@ -566,13 +548,13 @@ public class LetterView extends View {
     }
 
     private void handleActionUp(MotionEvent event) {
-        
         if (!mPoints.isEmpty()) {
             mPatternInProgress = false;
             cancelLineAnimations();
             notifyPatternDetected();
             invalidate();
         }
+
         if (PROFILE_DRAWING) {
             if (mDrawingProfilingStarted) {
                 Debug.stopMethodTracing();
@@ -586,6 +568,8 @@ public class LetterView extends View {
             CellState state = mPointStates.get(point);
             if (state.lineAnimator != null) {
                 state.lineAnimator.cancel();
+                state.lineStartX = Float.MIN_VALUE;
+                state.lineStartY = Float.MIN_VALUE;
                 state.lineEndX = Float.MIN_VALUE;
                 state.lineEndY = Float.MIN_VALUE;
             }
@@ -605,11 +589,11 @@ public class LetterView extends View {
             notifyPatternCleared();
         }
         if (hitCell != null) {
-            final float startX = getCenterXForColumn(hitCell.y);
-            final float startY = getCenterYForRow(hitCell.x);
+            final float startX = getCenterXForColumn(hitCell.x);
+            final float startY = getCenterYForRow(hitCell.y);
 
-            final float widthOffset = mSquareWidth / 2f;
-            final float heightOffset = mSquareHeight / 2f;
+            final float widthOffset = 0;//mSquareWidth / 2f;
+            final float heightOffset = 0;//mSquareHeight / 2f;
 
             invalidate((int) (startX - widthOffset), (int) (startY - heightOffset),
                     (int) (startX + widthOffset), (int) (startY + heightOffset));
@@ -659,14 +643,14 @@ public class LetterView extends View {
                                 MILLIS_PER_CIRCLE_ANIMATING;
 
                 final Point currentCell = pattern.get(numCircles - 1);
-                final float centerX = getCenterXForColumn(currentCell.y);
-                final float centerY = getCenterYForRow(currentCell.x);
+                final float centerX = getCenterXForColumn(currentCell.x);
+                final float centerY = getCenterYForRow(currentCell.y);
 
                 final Point nextCell = pattern.get(numCircles);
                 final float dx = percentageOfNextCircle *
-                        (getCenterXForColumn(nextCell.y) - centerX);
+                        (getCenterXForColumn(nextCell.x) - centerX);
                 final float dy = percentageOfNextCircle *
-                        (getCenterYForRow(nextCell.x) - centerY);
+                        (getCenterYForRow(nextCell.y) - centerY);
                 mInProgressX = centerX + dx;
                 mInProgressY = centerY + dy;
             }
@@ -706,12 +690,12 @@ public class LetterView extends View {
                 }
                 anyCircles = true;
 
-                float centerX = getCenterXForColumn(point.y);
-                float centerY = getCenterYForRow(point.x);
+                float centerX = getCenterXForColumn(point.x);
+                float centerY = getCenterYForRow(point.y);
                 if (i != 0) {
                     CellState state = mPointStates.get(point);
                     currentPath.rewind();
-                    currentPath.moveTo(lastX, lastY);
+                    currentPath.moveTo(state.lineStartX, state.lineStartY);
                     if (state.lineEndX != Float.MIN_VALUE && state.lineEndY != Float.MIN_VALUE) {
                         currentPath.lineTo(state.lineEndX, state.lineEndY);
                     } else {
@@ -815,6 +799,8 @@ public class LetterView extends View {
         public float translate = 0.0f;
         public float alpha = 1.0f;
         public float size;
+        public float lineStartX = Float.NaN;
+        public float lineStartY = Float.NaN;
         public float lineEndX = Float.NaN;
         public float lineEndY = Float.NaN;
         public ValueAnimator lineAnimator;

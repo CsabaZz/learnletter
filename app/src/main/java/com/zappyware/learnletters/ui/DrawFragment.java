@@ -78,11 +78,11 @@ public class DrawFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         ArrayList<Point> points = new ArrayList<>();
+        points.add(Point.of(.1f, .9f));
         points.add(Point.of(.5f, .1f));
+        points.add(Point.of(.9f, .9f));
         points.add(Point.of(.2f, .6f));
         points.add(Point.of(.7f, .6f));
-        points.add(Point.of(.1f, .9f));
-        points.add(Point.of(.9f, .9f));
 
         LetterView lv = (LetterView) view.findViewById(R.id.letter_view);
         lv.setPattern(LetterView.DisplayMode.Correct, points);
