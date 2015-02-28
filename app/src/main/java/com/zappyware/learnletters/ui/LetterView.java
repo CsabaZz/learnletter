@@ -320,8 +320,17 @@ public class LetterView extends View {
         notifyCellAdded();
     }
 
+    private float mLastStartX = 0f;
+    private float mLastStartY = 0f;
+
     private void startCellActivatedAnimation(Point point) {
         final CellState cellState = mPointStates.get(point);
+        cellState.lineStartX = mLastStartX;
+        cellState.lineStartY = mLastStartY;
+
+        mLastStartX = getCenterXForColumn(point.x);
+        mLastStartY = getCenterYForRow(point.y);
+
         startSizeAnimation(mDotSize, mDotSizeActivated, 96, mLinearOutSlowInInterpolator,
                 cellState, new Runnable() {
                     @Override
@@ -336,9 +345,6 @@ public class LetterView extends View {
 
     private void startLineEndAnimation(final CellState state,
                                        final float startX, final float startY, final float targetX, final float targetY) {
-        state.lineStartX = startX;
-        state.lineStartY = startY;
-
         ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 1);
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
@@ -548,6 +554,8 @@ public class LetterView extends View {
     }
 
     private void handleActionUp(MotionEvent event) {
+        mLastStartX = 0f;
+        mLastStartY = 0f;
         if (!mPoints.isEmpty()) {
             mPatternInProgress = false;
             cancelLineAnimations();
@@ -692,8 +700,9 @@ public class LetterView extends View {
 
                 float centerX = getCenterXForColumn(point.x);
                 float centerY = getCenterYForRow(point.y);
-                if (i != 0) {
-                    CellState state = mPointStates.get(point);
+
+                CellState state = mPointStates.get(point);
+                if (state.lineStartX != 0f && state.lineStartY != 0f) {
                     currentPath.rewind();
                     currentPath.moveTo(state.lineStartX, state.lineStartY);
                     if (state.lineEndX != Float.MIN_VALUE && state.lineEndY != Float.MIN_VALUE) {
